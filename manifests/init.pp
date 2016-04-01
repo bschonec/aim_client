@@ -11,19 +11,28 @@ class aim_client (
   $installtarget  = $::aim_client::params::installtarge,
 ) inherits ::aim_client::params {
 
-  package { "$installpackage":
-    ensure => $packageensure,
-    source => "$packagesource/$installpackage",
+  if $packagesource == 'repo' {
+    package { "$installpackage":
+      ensure => $packageensure,
+    }
+  else {
+    package { "$installpackage":
+      ensure => $packageensure,
+      source => "$packagesource/$installpackage",
+    }
   }
 
-  transition { 'Download Package':
-    resource   => File["$installtarget/$installpackage"],
-    attributes => { ensure => file,
-                    source => "$packagesource/$installpackage",
-                    mode   => '0755',
-                  },
-    prior_to   => Package["$installpackage"],
-  }
+# Instead of putting the source to use the puppet server as I did above,
+# we could also use the transition module here
+#
+#  transition { 'Download Package':
+#    resource   => File["$installtarget/$installpackage"],
+#    attributes => { ensure => file,
+#                    source => "$packagesource/$installpackage",
+#                    mode   => '0755',
+#                  },
+#    prior_to   => Package["$installpackage"],
+#  }
 
   transition { 'Stage Password File':
     resource   => File["$installtarget/password.cfg"]
@@ -32,9 +41,15 @@ class aim_client (
                     mode    => '0644'
     prior_to   => Package["$installpackage"],
 
-  file { ["$installtarget/$installpackage","$installtarget/password.cfg"]:
+  file { "$installtarget/password.cfg":
     ensure => absent,
   }
+# If I was using the transition module for the package too, I'd want to
+# include the lines below instead of the lines above
+#
+#  file { ["$installtarget/$installpackage","$installtarget/password.cfg"]:
+#    ensure => absent,
+#  }
 }
 
 
